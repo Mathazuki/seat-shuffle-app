@@ -52,6 +52,12 @@ body.mode-projection #projection-view {
 }
 
 /* ---------- 管理モード ---------- */
+.admin-header-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
 .admin-header {
   display: flex;
   align-items: center;
@@ -490,7 +496,7 @@ main {
   align-items: center;
 }
 
-.shuffle-btn, .save-image-btn {
+.shuffle-btn, .save-image-btn, .flip-btn {
   background: var(--color-primary);
   color: white;
   border: none;
@@ -499,6 +505,11 @@ main {
   font-weight: bold;
   min-height: 48px;
   cursor: pointer;
+}
+
+.flip-btn {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
 }
 
 .save-image-btn:disabled {
@@ -519,4 +530,27 @@ main {
 
 .hidden {
   display: none !important;
+}
+
+.save-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 90px;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(20, 30, 50, 0.92);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  max-width: 90vw;
+  text-align: center;
+  z-index: 200;
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+}
+
+.save-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }

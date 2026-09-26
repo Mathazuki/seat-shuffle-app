@@ -82,8 +82,9 @@ function main() {
   const stageEl = document.getElementById('projection-stage');
   const shuffleBtn = document.getElementById('shuffle-btn');
   const saveImageBtn = document.getElementById('save-image-btn');
+  const flipBtn = document.getElementById('flip-btn');
   const errorEl = document.getElementById('projection-error');
-  initProjection({ stageEl, shuffleBtn, saveImageBtn, errorEl });
+  initProjection({ stageEl, shuffleBtn, saveImageBtn, flipBtn, errorEl });
 
   store.subscribe(() => {
     renderActiveTab();
