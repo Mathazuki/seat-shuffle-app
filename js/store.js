@@ -1,6 +1,6 @@
 import { loadState, saveState } from './storage.js';
 import { uid } from './id.js';
-import { computeGridPosition } from './deskGrid.js';
+import { computeGridPosition, generateExplicitGrid } from './deskGrid.js';
 
 class Store {
   constructor() {
@@ -80,6 +80,22 @@ class Store {
     for (const key of Object.keys(this.state.conditions.byStudentId)) {
       const cond = this.state.conditions.byStudentId[key];
       if (cond.fixedDeskId === id) cond.fixedDeskId = null;
+    }
+    this._commit();
+  }
+
+  /** 現在の机をすべて置き換えて、指定した行数×列数のグリッドを作成する */
+  setGridLayout(rows, cols) {
+    const positions = generateExplicitGrid(rows, cols);
+    this.state.layout.desks = positions.map((pos) => ({
+      id: uid(),
+      xPct: pos.xPct,
+      yPct: pos.yPct,
+      frontZone: false,
+      manuallyPlaced: true
+    }));
+    for (const key of Object.keys(this.state.conditions.byStudentId)) {
+      this.state.conditions.byStudentId[key].fixedDeskId = null;
     }
     this._commit();
   }

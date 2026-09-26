@@ -2,8 +2,11 @@ import { store } from './store.js';
 import { getDeskSizePct } from './deskGrid.js';
 
 const DRAG_THRESHOLD_PX = 6;
+const MAX_GRID_LINES = 20;
 
 let selectedDeskId = null;
+let gridRowsInput = 5;
+let gridColsInput = 6;
 
 export function renderLayout(container) {
   const state = store.getState();
@@ -13,6 +16,8 @@ export function renderLayout(container) {
   intro.className = 'panel-intro';
   intro.textContent = '机をドラッグして自由に配置できます。机をタップすると「前方指定」や削除ができます。';
   container.appendChild(intro);
+
+  container.appendChild(renderGridSetup(state, container));
 
   const toolbar = document.createElement('div');
   toolbar.className = 'layout-toolbar';
@@ -49,6 +54,71 @@ export function renderLayout(container) {
   });
 
   renderSidePanel(sidePanel, state, container);
+}
+
+function renderGridSetup(state, fullContainer) {
+  const row = document.createElement('div');
+  row.className = 'grid-setup-row';
+
+  const rowsLabel = document.createElement('label');
+  rowsLabel.textContent = '縦(行)';
+  const rowsInput = document.createElement('input');
+  rowsInput.type = 'number';
+  rowsInput.min = '1';
+  rowsInput.max = String(MAX_GRID_LINES);
+  rowsInput.value = String(gridRowsInput);
+  rowsInput.className = 'grid-line-input';
+  rowsInput.addEventListener('change', () => {
+    gridRowsInput = clampGridLine(rowsInput.value);
+    rowsInput.value = String(gridRowsInput);
+  });
+  rowsLabel.appendChild(rowsInput);
+  row.appendChild(rowsLabel);
+
+  const colsLabel = document.createElement('label');
+  colsLabel.textContent = '横(列)';
+  const colsInput = document.createElement('input');
+  colsInput.type = 'number';
+  colsInput.min = '1';
+  colsInput.max = String(MAX_GRID_LINES);
+  colsInput.value = String(gridColsInput);
+  colsInput.className = 'grid-line-input';
+  colsInput.addEventListener('change', () => {
+    gridColsInput = clampGridLine(colsInput.value);
+    colsInput.value = String(gridColsInput);
+  });
+  colsLabel.appendChild(colsInput);
+  row.appendChild(colsLabel);
+
+  const createBtn = document.createElement('button');
+  createBtn.className = 'primary-btn';
+  createBtn.textContent = 'この行数×列数で作成';
+  createBtn.addEventListener('click', () => {
+    const rows = clampGridLine(rowsInput.value);
+    const cols = clampGridLine(colsInput.value);
+    const proceed =
+      state.layout.desks.length === 0 ||
+      confirm(
+        `現在の${state.layout.desks.length}個の机をすべて削除して、${rows}行×${cols}列(${rows * cols}個)の机を新しく作成します。前方ゾーンや固定席の設定も失われます。よろしいですか?`
+      );
+    if (!proceed) return;
+    store.setGridLayout(rows, cols);
+    renderLayout(fullContainer);
+  });
+  row.appendChild(createBtn);
+
+  const hint = document.createElement('span');
+  hint.className = 'grid-setup-hint';
+  hint.textContent = '作成後は個々の机を追加・削除・ドラッグで調整できます';
+  row.appendChild(hint);
+
+  return row;
+}
+
+function clampGridLine(value) {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n)) return 1;
+  return Math.min(Math.max(n, 1), MAX_GRID_LINES);
 }
 
 function renderDeskEl(desk, index, canvas, sidePanel, fullContainer, deskWPct, deskHPct) {
