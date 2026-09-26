@@ -1,7 +1,6 @@
 import { store } from './store.js';
+import { getDeskSizePct } from './deskGrid.js';
 
-const DESK_W_PCT = 9;
-const DESK_H_PCT = 9;
 const DRAG_THRESHOLD_PX = 6;
 
 let selectedDeskId = null;
@@ -21,10 +20,7 @@ export function renderLayout(container) {
   addBtn.className = 'primary-btn';
   addBtn.textContent = '机を追加';
   addBtn.addEventListener('click', () => {
-    const count = state.layout.desks.length;
-    const col = count % 6;
-    const row = Math.floor(count / 6);
-    store.addDesk(10 + col * 14, 12 + row * 16);
+    store.addDesk();
   });
   toolbar.appendChild(addBtn);
 
@@ -46,22 +42,24 @@ export function renderLayout(container) {
   sidePanel.className = 'layout-side-panel';
   body.appendChild(sidePanel);
 
+  const { wPct, hPct } = getDeskSizePct(state.layout.desks.length);
+
   state.layout.desks.forEach((desk, index) => {
-    canvas.appendChild(renderDeskEl(desk, index, canvas, sidePanel, container));
+    canvas.appendChild(renderDeskEl(desk, index, canvas, sidePanel, container, wPct, hPct));
   });
 
   renderSidePanel(sidePanel, state, container);
 }
 
-function renderDeskEl(desk, index, canvas, sidePanel, fullContainer) {
+function renderDeskEl(desk, index, canvas, sidePanel, fullContainer, deskWPct, deskHPct) {
   const el = document.createElement('div');
   el.className = 'desk';
   if (desk.frontZone) el.classList.add('desk-front');
   if (desk.id === selectedDeskId) el.classList.add('desk-selected');
   el.style.left = `${desk.xPct}%`;
   el.style.top = `${desk.yPct}%`;
-  el.style.width = `${DESK_W_PCT}%`;
-  el.style.height = `${DESK_H_PCT}%`;
+  el.style.width = `${deskWPct}%`;
+  el.style.height = `${deskHPct}%`;
   el.textContent = String(index + 1);
   el.dataset.deskId = desk.id;
 
@@ -91,8 +89,8 @@ function renderDeskEl(desk, index, canvas, sidePanel, fullContainer) {
     const rect = canvas.getBoundingClientRect();
     const deltaXPct = (dx / rect.width) * 100;
     const deltaYPct = (dy / rect.height) * 100;
-    const newX = clamp(startXPct + deltaXPct, 0, 100 - DESK_W_PCT);
-    const newY = clamp(startYPct + deltaYPct, 0, 100 - DESK_H_PCT);
+    const newX = clamp(startXPct + deltaXPct, 0, 100 - deskWPct);
+    const newY = clamp(startYPct + deltaYPct, 0, 100 - deskHPct);
     el.style.left = `${newX}%`;
     el.style.top = `${newY}%`;
   });
@@ -111,9 +109,9 @@ function renderDeskEl(desk, index, canvas, sidePanel, fullContainer) {
       const dy = e.clientY - startY;
       const deltaXPct = (dx / rect.width) * 100;
       const deltaYPct = (dy / rect.height) * 100;
-      const newX = clamp(startXPct + deltaXPct, 0, 100 - DESK_W_PCT);
-      const newY = clamp(startYPct + deltaYPct, 0, 100 - DESK_H_PCT);
-      store.updateDesk(desk.id, { xPct: newX, yPct: newY });
+      const newX = clamp(startXPct + deltaXPct, 0, 100 - deskWPct);
+      const newY = clamp(startYPct + deltaYPct, 0, 100 - deskHPct);
+      store.updateDesk(desk.id, { xPct: newX, yPct: newY, manuallyPlaced: true });
     } else {
       selectedDeskId = selectedDeskId === desk.id ? null : desk.id;
       renderLayout(fullContainer);

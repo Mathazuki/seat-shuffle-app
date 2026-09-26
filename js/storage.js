@@ -14,12 +14,17 @@ export function loadState() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultState();
     const parsed = JSON.parse(raw);
-    return {
+    const state = {
       ...defaultState(),
       ...parsed,
       layout: { ...defaultState().layout, ...(parsed.layout || {}) },
       conditions: { ...defaultState().conditions, ...(parsed.conditions || {}) }
     };
+    // 旧バージョンのデータに manuallyPlaced が無い場合は、既存の配置を動かさないよう「配置済み」扱いにする
+    state.layout.desks = state.layout.desks.map((d) =>
+      d.manuallyPlaced === undefined ? { ...d, manuallyPlaced: true } : d
+    );
+    return state;
   } catch (e) {
     console.error('状態の読み込みに失敗しました', e);
     return defaultState();

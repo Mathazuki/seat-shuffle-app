@@ -1,4 +1,4 @@
-const CACHE_NAME = 'seat-shuffle-app-v1';
+const CACHE_NAME = 'seat-shuffle-app-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -7,6 +7,7 @@ const ASSETS = [
   './js/id.js',
   './js/storage.js',
   './js/store.js',
+  './js/deskGrid.js',
   './js/shuffle.js',
   './js/animation.js',
   './js/imageExport.js',

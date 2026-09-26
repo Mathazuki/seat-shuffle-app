@@ -1,5 +1,4 @@
-const DESK_W_PCT = 9;
-const DESK_H_PCT = 9;
+import { getDeskSizePct } from './deskGrid.js';
 
 /**
  * 座席チャートを DOM に描画する(読み取り専用)。
@@ -13,14 +12,16 @@ export function renderStaticSeatChart(container, seats) {
   stage.className = 'seat-chart-stage';
   container.appendChild(stage);
 
+  const { wPct, hPct } = getDeskSizePct(seats.length);
+
   const deskEls = seats.map((seat) => {
     const el = document.createElement('div');
     el.className = 'desk desk-display';
     if (seat.frontZone) el.classList.add('desk-front');
     el.style.left = `${seat.xPct}%`;
     el.style.top = `${seat.yPct}%`;
-    el.style.width = `${DESK_W_PCT}%`;
-    el.style.height = `${DESK_H_PCT}%`;
+    el.style.width = `${wPct}%`;
+    el.style.height = `${hPct}%`;
     el.textContent = seat.studentName || '';
     stage.appendChild(el);
     return el;

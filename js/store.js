@@ -1,5 +1,6 @@
 import { loadState, saveState } from './storage.js';
 import { uid } from './id.js';
+import { computeGridPosition } from './deskGrid.js';
 
 class Store {
   constructor() {
@@ -49,9 +50,10 @@ class Store {
   }
 
   // ---------- レイアウト ----------
-  addDesk(xPct, yPct) {
-    const desk = { id: uid(), xPct, yPct, frontZone: false };
+  addDesk() {
+    const desk = { id: uid(), xPct: 0, yPct: 0, frontZone: false, manuallyPlaced: false };
     this.state.layout.desks.push(desk);
+    this._autoArrangeUnplaced();
     this._commit();
     return desk;
   }
@@ -61,6 +63,16 @@ class Store {
     if (!d) return;
     Object.assign(d, patch);
     this._commit();
+  }
+
+  /** 手動で位置を動かしていない机だけを、はみ出さないグリッドに再配置する */
+  _autoArrangeUnplaced() {
+    const unplaced = this.state.layout.desks.filter((d) => !d.manuallyPlaced);
+    unplaced.forEach((d, i) => {
+      const pos = computeGridPosition(i, unplaced.length);
+      d.xPct = pos.xPct;
+      d.yPct = pos.yPct;
+    });
   }
 
   removeDesk(id) {

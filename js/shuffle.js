@@ -100,8 +100,6 @@ export function runShuffle({ roster, desks, conditions }) {
 
   const otherDesks = remainingDesks.filter((d) => !d.frontZone);
   const otherStudents = remainingStudents.filter((s) => !getCondition(s.id).frontRequired);
-  // 前方ゾーンの机が余っている場合は、前方指定なしの生徒も座れるように候補に含める
-  const flexFrontDesks = frontDesks.slice(frontRequiredStudents.length);
 
   let best = null; // { assignment, genderScore }
 
@@ -112,6 +110,8 @@ export function runShuffle({ roster, desks, conditions }) {
     frontRequiredStudents.forEach((student, i) => {
       assignment[shuffledFrontDesks[i].id] = student.id;
     });
+    // 前方指定の生徒に使われなかった前方ゾーンの机は、前方指定なしの生徒も座れる候補にする
+    const flexFrontDesks = shuffledFrontDesks.slice(frontRequiredStudents.length);
 
     const poolDesks = shuffleArray([...otherDesks, ...flexFrontDesks]);
     const poolStudents = shuffleArray(otherStudents);

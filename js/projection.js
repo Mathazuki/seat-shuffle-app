@@ -2,9 +2,7 @@ import { store } from './store.js';
 import { runShuffle } from './shuffle.js';
 import { playSlotAnimation } from './animation.js';
 import { exportSeatChartImage } from './imageExport.js';
-
-const DESK_W_PCT = 9;
-const DESK_H_PCT = 9;
+import { getDeskSizePct } from './deskGrid.js';
 
 let currentAssignment = null; // deskId -> studentId
 let currentSeatsSnapshot = null;
@@ -77,14 +75,16 @@ function renderBlankStage(stageEl, desks) {
   stage.className = 'seat-chart-stage';
   stageEl.appendChild(stage);
 
+  const { wPct, hPct } = getDeskSizePct(list.length);
+
   return list.map((desk) => {
     const el = document.createElement('div');
     el.className = 'desk desk-display';
     if (desk.frontZone) el.classList.add('desk-front');
     el.style.left = `${desk.xPct}%`;
     el.style.top = `${desk.yPct}%`;
-    el.style.width = `${DESK_W_PCT}%`;
-    el.style.height = `${DESK_H_PCT}%`;
+    el.style.width = `${wPct}%`;
+    el.style.height = `${hPct}%`;
     el.textContent = '';
     stage.appendChild(el);
     return { desk, el };
