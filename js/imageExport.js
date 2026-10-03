@@ -1,3 +1,5 @@
+import { showToast } from './toast.js';
+
 const CANVAS_W = 1600;
 const CANVAS_H = 1200;
 const DESK_W = 150;
@@ -21,7 +23,7 @@ function buildFilename() {
   )}${pad(now.getMinutes())}.png`;
 }
 
-function drawSeatChart(seats, title, flipped, showFrontZone) {
+function drawSeatChart(seats, title, rotate180, showFrontZone) {
   const canvas = document.createElement('canvas');
   canvas.width = CANVAS_W;
   canvas.height = CANVAS_H;
@@ -39,8 +41,9 @@ function drawSeatChart(seats, title, flipped, showFrontZone) {
   const areaHeight = CANVAS_H - areaTop - 30;
 
   for (const seat of seats) {
-    const effectiveYPct = flipped ? 100 - seat.yPct : seat.yPct;
-    const cx = (seat.xPct / 100) * CANVAS_W;
+    const effectiveXPct = rotate180 ? 100 - seat.xPct : seat.xPct;
+    const effectiveYPct = rotate180 ? 100 - seat.yPct : seat.yPct;
+    const cx = (effectiveXPct / 100) * CANVAS_W;
     const cy = areaTop + (effectiveYPct / 100) * areaHeight;
     const x = cx - DESK_W / 2;
     const y = cy - DESK_H / 2;
@@ -73,18 +76,6 @@ function drawSeatChart(seats, title, flipped, showFrontZone) {
   return canvas;
 }
 
-function showToast(message) {
-  const toast = document.createElement('div');
-  toast.className = 'save-toast';
-  toast.textContent = message;
-  document.body.appendChild(toast);
-  requestAnimationFrame(() => toast.classList.add('show'));
-  setTimeout(() => {
-    toast.classList.remove('show');
-    setTimeout(() => toast.remove(), 400);
-  }, 3200);
-}
-
 function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -102,11 +93,11 @@ function downloadBlob(blob, filename) {
  * 「写真に保存」または「”ファイル”に保存」を選べるようにする。
  * @param {Array<{xPct:number, yPct:number, frontZone?:boolean, studentName:string}>} seats
  * @param {string} title
- * @param {{flipped?: boolean, showFrontZone?: boolean}} [options]
+ * @param {{rotate180?: boolean, showFrontZone?: boolean}} [options]
  */
 export async function exportSeatChartImage(seats, title, options = {}) {
   const showFrontZone = options.showFrontZone !== false;
-  const canvas = drawSeatChart(seats, title, !!options.flipped, showFrontZone);
+  const canvas = drawSeatChart(seats, title, !!options.rotate180, showFrontZone);
   const filename = buildFilename();
 
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));

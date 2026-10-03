@@ -4,6 +4,10 @@ import { renderLayout } from './layout.js';
 import { renderConditions } from './conditions.js';
 import { renderHistory } from './history.js';
 import { initProjection, refreshProjectionStage } from './projection.js';
+import { showToast } from './toast.js';
+
+const UPDATE_CHECK_INTERVAL_MS = 60000;
+const UPDATE_COMPLETE_FLAG = 'seatShuffleApp:updateCompleted';
 
 const TAB_RENDERERS = {
   roster: renderRoster,
@@ -67,9 +71,83 @@ function setupModeSwitch() {
 }
 
 function registerServiceWorker() {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./service-worker.js').catch((e) => {
+  if (!('serviceWorker' in navigator)) return;
+
+  // 直前の読み込みが「自動更新の完了による再読み込み」だった場合は、完了メッセージを表示する
+  const justUpdated = sessionStorage.getItem(UPDATE_COMPLETE_FLAG) === '1';
+  if (justUpdated) {
+    sessionStorage.removeItem(UPDATE_COMPLETE_FLAG);
+    showToast('更新が完了しました');
+  }
+
+  // すでに古いバージョンに制御されているページ(=再訪問)かどうかを覚えておく。
+  // 新規インストール直後の初回切り替えでは再読み込みしない。
+  const hadController = !!navigator.serviceWorker.controller;
+  let lastCheckAt = 0;
+
+  navigator.serviceWorker
+    .register('./service-worker.js')
+    .then((registration) => {
+      registration.addEventListener('updatefound', () => {
+        const newWorker = registration.installing;
+        if (!newWorker) return;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            showToast('新しいバージョンが見つかったので更新します。しばらくお待ちください…', {
+              persistent: true
+            });
+          }
+        });
+      });
+
+      const checkForUpdate = async () => {
+        const now = Date.now();
+        if (now - lastCheckAt < UPDATE_CHECK_INTERVAL_MS) return;
+        lastCheckAt = now;
+
+        if (!navigator.onLine) {
+          showToast('オフラインのため更新ができませんでした');
+          return;
+        }
+
+        showToast('更新を確認しています…');
+
+        let foundUpdate = false;
+        const onUpdateFound = () => {
+          foundUpdate = true;
+        };
+        registration.addEventListener('updatefound', onUpdateFound);
+
+        try {
+          await registration.update();
+        } catch (e) {
+          showToast('オフラインのため更新ができませんでした');
+          return;
+        } finally {
+          registration.removeEventListener('updatefound', onUpdateFound);
+        }
+
+        if (!foundUpdate) {
+          showToast('お使いのバージョンは最新です');
+        }
+      };
+
+      // アプリを開いた/再表示したタイミングで、新しいバージョンがないか確認する
+      // (更新直後の再読み込みでは、直前の完了メッセージと重複しないよう最初の1回は省略する)
+      if (!justUpdated) checkForUpdate();
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') checkForUpdate();
+      });
+    })
+    .catch((e) => {
       console.error('Service Worker registration failed', e);
+    });
+
+  if (hadController) {
+    // 新しいバージョンが有効化されたら、最新のコードを使うため自動的に再読み込みする
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      sessionStorage.setItem(UPDATE_COMPLETE_FLAG, '1');
+      window.location.reload();
     });
   }
 }
